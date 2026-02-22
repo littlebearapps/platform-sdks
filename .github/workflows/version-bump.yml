@@ -1,0 +1,90 @@
+name: Auto Version Bump
+
+# Automatically bumps version based on conventional commit prefixes
+# - feat: -> minor bump (0.1.0 -> 0.2.0)
+# - fix:, perf:, refactor: -> patch bump (0.1.0 -> 0.1.1)
+# - feat!: or BREAKING CHANGE -> major bump (0.1.0 -> 1.0.0)
+# - chore:, docs:, style:, test:, ci: -> no bump
+#
+# Requires: GH_PAT secret with repo scope and branch protection bypass
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  version-bump:
+    name: Bump version on merge
+    runs-on: ubuntu-latest
+    if: |
+      !contains(github.event.head_commit.message, 'chore: bump version') &&
+      !contains(github.event.head_commit.message, '[skip ci]')
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Determine bump type from commit message
+        id: bump
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          if echo "$COMMIT_MSG" | grep -qE "^(feat|fix|refactor|perf)(\(.+\))?!:|BREAKING CHANGE"; then
+            echo "type=major" >> $GITHUB_OUTPUT
+            echo "Detected: BREAKING CHANGE -> major bump"
+          elif echo "$COMMIT_MSG" | grep -qE "^feat(\(.+\))?:"; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+            echo "Detected: feat -> minor bump"
+          elif echo "$COMMIT_MSG" | grep -qE "^(fix|perf|refactor)(\(.+\))?:"; then
+            echo "type=patch" >> $GITHUB_OUTPUT
+            echo "Detected: fix/perf/refactor -> patch bump"
+          else
+            echo "type=none" >> $GITHUB_OUTPUT
+            echo "Detected: chore/docs/style/test/ci or other -> no bump"
+          fi
+
+      - name: Bump version
+        if: steps.bump.outputs.type != 'none'
+        env:
+          BUMP_TYPE: ${{ steps.bump.outputs.type }}
+        run: |
+          CURRENT=$(jq -r '.version' package.json)
+          echo "Current version: $CURRENT"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          case "$BUMP_TYPE" in
+            major)
+              NEW_VERSION="$((MAJOR + 1)).0.0"
+              ;;
+            minor)
+              NEW_VERSION="${MAJOR}.$((MINOR + 1)).0"
+              ;;
+            patch)
+              NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+              ;;
+          esac
+
+          echo "New version: $NEW_VERSION"
+
+          jq --arg v "$NEW_VERSION" '.version = $v' package.json > package.json.tmp
+          mv package.json.tmp package.json
+
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Commit and push version bump
+        if: steps.bump.outputs.type != 'none'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add package.json
+          git commit -m "chore: bump version to v${NEW_VERSION} [skip ci]"
+          git push

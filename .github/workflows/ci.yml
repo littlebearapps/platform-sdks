@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Run tests with coverage
+        run: |
+          npx vitest run tests/ \
+            --coverage \
+            --coverage.include='src/**' \
+            --coverage.reporter=text \
+            --coverage.reporter=json-summary \
+            --coverage.thresholds.lines=65
+
+      - name: Version drift check
+        if: github.event_name == 'pull_request'
+        run: |
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          NPM_VERSION=$(npm view @littlebearapps/platform-sdk version 2>/dev/null || echo "0.0.0")
+
+          echo "Local: $LOCAL_VERSION"
+          echo "npm:   $NPM_VERSION"
+
+          if [ "$LOCAL_VERSION" = "$NPM_VERSION" ]; then
+            SDK_CHANGED=$(git diff --name-only origin/main...HEAD -- src/ | wc -l)
+            if [ "$SDK_CHANGED" -gt 0 ]; then
+              echo "::warning::SDK source files changed but version ($LOCAL_VERSION) was not bumped."
+            else
+              echo "No source changes - version is current."
+            fi
+          else
+            echo "Version bumped: $NPM_VERSION -> $LOCAL_VERSION"
+          fi
+
+  publish:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Check if publish needed
+        id: check
+        run: |
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          NPM_VERSION=$(npm view @littlebearapps/platform-sdk version 2>/dev/null || echo "0.0.0")
+
+          echo "local=$LOCAL_VERSION" >> "$GITHUB_OUTPUT"
+          echo "npm=$NPM_VERSION" >> "$GITHUB_OUTPUT"
+
+          if [ "$LOCAL_VERSION" != "$NPM_VERSION" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "Publishing $LOCAL_VERSION (npm has $NPM_VERSION)"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Already published: $LOCAL_VERSION"
+          fi
+
+      - name: Publish to npm
+        if: steps.check.outputs.publish == 'true'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Summary
+        if: steps.check.outputs.publish == 'true'
+        run: |
+          echo "### SDK Published :package:" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Version**: \`${{ steps.check.outputs.local }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Previous**: \`${{ steps.check.outputs.npm }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Install: \`npm install @littlebearapps/platform-sdk@${{ steps.check.outputs.local }}\`" >> "$GITHUB_STEP_SUMMARY"
