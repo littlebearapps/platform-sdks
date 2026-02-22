@@ -71,4 +71,9 @@ Additional exports: `./heartbeat`, `./retry`, `./costs`
 
 ## Documentation
 
-Full integration guide: [Platform SDK Integration Checklist](https://docs.littlebearapps.com/platform-guides/sdk-integration-checklist/)
+- [Integration Checklist](https://docs.littlebearapps.com/platform-guides/sdk-integration-checklist/) — Full setup guide
+- [Claude Code Plugin](https://github.com/littlebearapps/platform-sdk-plugin) — Automated SDK enforcement for Claude Code
+
+## License
+
+MIT
