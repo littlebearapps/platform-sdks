@@ -14,18 +14,11 @@ In January 2026, a buggy deployment caused **$4,868 in unexpected Cloudflare cha
 
 We built this toolkit so it never happens again — and we're giving it away for free so it doesn't happen to you either.
 
-**What it does:**
-- **Circuit breakers** that automatically stop runaway workers before they drain your wallet
-- **Feature-level budgets** with configurable daily limits per binding (D1, KV, R2, Queues)
-- **Error collection** that creates GitHub issues from worker errors with AI-powered classification
-- **Gap detection** that alerts you when your monitoring stops receiving data
-- **Pattern discovery** that learns your error patterns and classifies them automatically
-
 ## Two Packages
 
-### 1. Consumer SDK (`@littlebearapps/platform-sdk`)
+### 1. Platform Consumer SDK (`@littlebearapps/platform-sdk`)
 
-Lightweight library you install in each Cloudflare Worker project. Zero infrastructure dependencies.
+Lightweight library you install in each Cloudflare Worker project. Zero infrastructure dependencies. Wraps your bindings with automatic tracking and circuit breakers.
 
 ```bash
 npm install @littlebearapps/platform-sdk
@@ -50,15 +43,15 @@ export default {
 };
 ```
 
-### 2. Admin Scaffolder (`@littlebearapps/create-platform`)
+[Full Consumer SDK docs](packages/sdk/README.md)
 
-CLI tool that generates the backend infrastructure — workers, D1 migrations, config files. Run once, then you own the code.
+### 2. Platform Admin SDK (`@littlebearapps/create-platform`)
+
+CLI scaffolder that generates the backend infrastructure — workers, D1 migrations, config files. Run once, then you own the code.
 
 ```bash
 npx @littlebearapps/create-platform my-platform
 ```
-
-Three tiers:
 
 | Tier | Workers | What You Get | Cost |
 |------|---------|-------------|------|
@@ -66,44 +59,7 @@ Three tiers:
 | **Standard** | 3 | + Error collection (GitHub issues), gap detection | ~$0/mo |
 | **Full** | 8 | + AI pattern discovery, notifications, search, alerts | ~$5/mo |
 
-## SDK Exports
-
-### Main (`@littlebearapps/platform-sdk`)
-
-| Export | Description |
-|--------|------------|
-| `withFeatureBudget()` | Wrap `fetch` handlers — proxies bindings with automatic tracking |
-| `withCronBudget()` | Wrap `scheduled` handlers |
-| `withQueueBudget()` | Wrap `queue` handlers |
-| `CircuitBreakerError` | Thrown when a feature's budget is exhausted |
-| `completeTracking()` | Flush pending metrics (call in `finally` or `ctx.waitUntil`) |
-| `pingHeartbeat()` | Gatus/Uptime heartbeat integration |
-| `withRetry()` | Retry with exponential backoff |
-
-### Sub-path Exports (v0.2.0+)
-
-| Export | Description |
-|--------|------------|
-| `@littlebearapps/platform-sdk/middleware` | Project-level circuit breaker middleware (Hono-compatible) |
-| `@littlebearapps/platform-sdk/patterns` | 56 static transient error patterns for Cloudflare Workers |
-| `@littlebearapps/platform-sdk/dynamic-patterns` | Runtime pattern loading from KV with ReDoS-safe DSL |
-
-## Required Cloudflare Bindings
-
-Add these to your `wrangler.jsonc`:
-
-```jsonc
-{
-  "kv_namespaces": [
-    { "binding": "PLATFORM_CACHE", "id": "YOUR_KV_NAMESPACE_ID" }
-  ],
-  "queues": {
-    "producers": [
-      { "binding": "TELEMETRY_QUEUE", "queue": "your-telemetry-queue" }
-    ]
-  }
-}
-```
+[Full Admin SDK docs](packages/create-platform/README.md)
 
 ## Consumer CI Workflow
 
@@ -120,15 +76,6 @@ jobs:
 
 Checks: SDK installation, wrangler config, budget wrapper usage, cost safety patterns, middleware migration.
 
-## Configuration
-
-The Platform uses config-driven infrastructure with two YAML files as the source of truth:
-
-- **`services.yaml`** — Project registry, feature definitions, infrastructure mapping
-- **`budgets.yaml`** — Daily limits, circuit breaker thresholds, cost tiers
-
-Changes are synced to D1/KV via `npm run sync:config`.
-
 ## Architecture
 
 ```
@@ -139,11 +86,11 @@ Consumer Projects (your workers)
 Platform Usage Worker (cron + queue consumer)
     |
     v
-D1 Warehouse ─── KV Cache ─── Analytics Engine
+D1 Warehouse --- KV Cache --- Analytics Engine
     |
-    ├── Error Collector (tail worker → GitHub issues)
-    ├── Sentinel (gap detection → alerts)
-    └── Pattern Discovery (AI → error classification)
+    +-- Error Collector (tail worker -> GitHub issues)
+    +-- Sentinel (gap detection -> alerts)
+    +-- Pattern Discovery (AI -> error classification)
 ```
 
 ## Documentation

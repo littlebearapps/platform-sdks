@@ -16,8 +16,8 @@ import { collectOptions } from './prompts.js';
 import { scaffold } from './scaffold.js';
 
 const BANNER = `
-  ${pc.bold(pc.cyan('Platform SDK'))} — Cloudflare Cost Protection
-  ${pc.dim('Automatic circuit breakers, budget enforcement, and error collection')}
+  ${pc.bold(pc.cyan('Platform Admin SDK'))} — Cloudflare Cost Protection
+  ${pc.dim('Scaffold backend infrastructure: circuit breakers, budget enforcement, error collection')}
 `;
 
 async function main(): Promise<void> {
