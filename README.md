@@ -1,9 +1,9 @@
-# Platform SDK
+# Platform SDKs
 
 **Automatic cost protection, circuit breaking, and error collection for Cloudflare Workers.**
 
-[![npm version](https://img.shields.io/npm/v/@littlebearapps/platform-sdk)](https://www.npmjs.com/package/@littlebearapps/platform-sdk)
-[![CI](https://github.com/littlebearapps/platform-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/littlebearapps/platform-sdk/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@littlebearapps/platform-consumer-sdk)](https://www.npmjs.com/package/@littlebearapps/platform-consumer-sdk)
+[![CI](https://github.com/littlebearapps/platform-sdks/actions/workflows/ci.yml/badge.svg)](https://github.com/littlebearapps/platform-sdks/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
@@ -16,16 +16,16 @@ We built this toolkit so it never happens again — and we're giving it away for
 
 ## Two Packages
 
-### 1. Platform Consumer SDK (`@littlebearapps/platform-sdk`)
+### 1. Platform Consumer SDK (`@littlebearapps/platform-consumer-sdk`)
 
 Lightweight library you install in each Cloudflare Worker project. Zero infrastructure dependencies. Wraps your bindings with automatic tracking and circuit breakers.
 
 ```bash
-npm install @littlebearapps/platform-sdk
+npm install @littlebearapps/platform-consumer-sdk
 ```
 
 ```typescript
-import { withFeatureBudget, CircuitBreakerError } from '@littlebearapps/platform-sdk';
+import { withFeatureBudget, CircuitBreakerError } from '@littlebearapps/platform-consumer-sdk';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -43,14 +43,14 @@ export default {
 };
 ```
 
-[Full Consumer SDK docs](packages/sdk/README.md)
+[Full Consumer SDK docs](packages/consumer-sdk/README.md)
 
-### 2. Platform Admin SDK (`@littlebearapps/create-platform`)
+### 2. Platform Admin SDK (`@littlebearapps/platform-admin-sdk`)
 
 CLI scaffolder that generates the backend infrastructure — workers, D1 migrations, config files. Run once, then you own the code.
 
 ```bash
-npx @littlebearapps/create-platform my-platform
+npx @littlebearapps/platform-admin-sdk my-platform
 ```
 
 | Tier | Workers | What You Get | Cost |
@@ -59,7 +59,7 @@ npx @littlebearapps/create-platform my-platform
 | **Standard** | 3 | + Error collection (GitHub issues), gap detection | ~$0/mo |
 | **Full** | 8 | + AI pattern discovery, notifications, search, alerts | ~$5/mo |
 
-[Full Admin SDK docs](packages/create-platform/README.md)
+[Full Admin SDK docs](packages/admin-sdk/README.md)
 
 ## Consumer CI Workflow
 
@@ -69,7 +69,7 @@ Validate your SDK integration automatically in GitHub Actions:
 # .github/workflows/sdk-check.yml
 jobs:
   sdk-check:
-    uses: littlebearapps/platform-sdk/.github/workflows/consumer-check.yml@main
+    uses: littlebearapps/platform-sdks/.github/workflows/consumer-check.yml@main
     with:
       project-name: my-project
 ```

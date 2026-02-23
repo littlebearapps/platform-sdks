@@ -1,0 +1,21 @@
+{
+  "name": "{{projectSlug}}-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "sync:config": "npx tsx scripts/sync-config.ts",
+    "deploy:usage": "wrangler deploy -c wrangler.{{projectSlug}}-usage.jsonc"
+  },
+  "dependencies": {
+    "@littlebearapps/platform-consumer-sdk": "^{{sdkVersion}}",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3",
+    "wrangler": "^3.100.0"
+  }
+}

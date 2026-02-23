@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/sdk
+        working-directory: packages/consumer-sdk
     steps:
       - uses: actions/checkout@v6
 
@@ -42,7 +42,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           LOCAL_VERSION=$(node -p "require('./package.json').version")
-          NPM_VERSION=$(npm view @littlebearapps/platform-sdk version 2>/dev/null || echo "0.0.0")
+          NPM_VERSION=$(npm view @littlebearapps/platform-consumer-sdk version 2>/dev/null || echo "0.0.0")
 
           echo "Local: $LOCAL_VERSION"
           echo "npm:   $NPM_VERSION"
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/create-platform
+        working-directory: packages/admin-sdk
     steps:
       - uses: actions/checkout@v6
 
@@ -89,7 +89,7 @@ jobs:
       contents: read
     defaults:
       run:
-        working-directory: packages/sdk
+        working-directory: packages/consumer-sdk
     steps:
       - uses: actions/checkout@v6
 
@@ -102,7 +102,7 @@ jobs:
         id: check
         run: |
           LOCAL_VERSION=$(node -p "require('./package.json').version")
-          NPM_VERSION=$(npm view @littlebearapps/platform-sdk version 2>/dev/null || echo "0.0.0")
+          NPM_VERSION=$(npm view @littlebearapps/platform-consumer-sdk version 2>/dev/null || echo "0.0.0")
 
           echo "local=$LOCAL_VERSION" >> "$GITHUB_OUTPUT"
           echo "npm=$NPM_VERSION" >> "$GITHUB_OUTPUT"
@@ -129,7 +129,7 @@ jobs:
           echo "**Version**: \`${{ steps.check.outputs.local }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "**Previous**: \`${{ steps.check.outputs.npm }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Install: \`npm install @littlebearapps/platform-sdk@${{ steps.check.outputs.local }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Install: \`npm install @littlebearapps/platform-consumer-sdk@${{ steps.check.outputs.local }}\`" >> "$GITHUB_STEP_SUMMARY"
 
   publish-scaffolder:
     name: Publish Scaffolder
@@ -140,7 +140,7 @@ jobs:
       contents: read
     defaults:
       run:
-        working-directory: packages/create-platform
+        working-directory: packages/admin-sdk
     steps:
       - uses: actions/checkout@v6
 
@@ -159,7 +159,7 @@ jobs:
         id: check
         run: |
           LOCAL_VERSION=$(node -p "require('./package.json').version")
-          NPM_VERSION=$(npm view @littlebearapps/create-platform version 2>/dev/null || echo "0.0.0")
+          NPM_VERSION=$(npm view @littlebearapps/platform-admin-sdk version 2>/dev/null || echo "0.0.0")
 
           echo "local=$LOCAL_VERSION" >> "$GITHUB_OUTPUT"
           echo "npm=$NPM_VERSION" >> "$GITHUB_OUTPUT"
@@ -185,4 +185,4 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**Version**: \`${{ steps.check.outputs.local }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Install: \`npx @littlebearapps/create-platform\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Install: \`npx @littlebearapps/platform-admin-sdk\`" >> "$GITHUB_STEP_SUMMARY"

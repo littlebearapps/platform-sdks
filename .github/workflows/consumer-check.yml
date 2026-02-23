@@ -4,7 +4,7 @@ name: Consumer SDK Check
 # Usage in consumer repo:
 #   jobs:
 #     sdk-check:
-#       uses: littlebearapps/platform-sdk/.github/workflows/consumer-check.yml@main
+#       uses: littlebearapps/platform-sdks/.github/workflows/consumer-check.yml@main
 #       with:
 #         project-name: scout
 
@@ -121,12 +121,12 @@ jobs:
 
           # ── 1. SDK Installation ──────────────────────────────────────────
           echo "::group::SDK Installation"
-          SDK_PKG="node_modules/@littlebearapps/platform-sdk/package.json"
+          SDK_PKG="node_modules/@littlebearapps/platform-consumer-sdk/package.json"
           if [ -f "$SDK_PKG" ]; then
             SDK_VERSION=$(node -p "require('./$SDK_PKG').version")
             add_result "SDK installed" "PASS" "v$SDK_VERSION"
           else
-            add_result "SDK installed" "FAIL" "@littlebearapps/platform-sdk not found in node_modules"
+            add_result "SDK installed" "FAIL" "@littlebearapps/platform-consumer-sdk not found in node_modules"
           fi
           echo "::endgroup::"
 
@@ -297,7 +297,7 @@ jobs:
               # Check if it's a thin re-export from SDK
               IS_REEXPORT=false
               for f in $LOCAL_CB; do
-                if grep -q "@littlebearapps/platform-sdk/middleware" "$f" 2>/dev/null; then
+                if grep -q "@littlebearapps/platform-consumer-sdk/middleware" "$f" 2>/dev/null; then
                   IS_REEXPORT=true
                 fi
               done
@@ -305,11 +305,11 @@ jobs:
               if [ "$IS_REEXPORT" = "true" ]; then
                 add_result "CB middleware" "PASS" "Local file is a re-export from SDK"
               else
-                add_result "CB middleware" "WARN" "Local circuit-breaker file found — migrate to @littlebearapps/platform-sdk/middleware"
+                add_result "CB middleware" "WARN" "Local circuit-breaker file found — migrate to @littlebearapps/platform-consumer-sdk/middleware"
               fi
             else
               # Check if SDK middleware is imported directly
-              SDK_MW=$(grep -rl "@littlebearapps/platform-sdk/middleware\|platform-sdk.*middleware" $SOURCE_FILES 2>/dev/null | wc -l)
+              SDK_MW=$(grep -rl "@littlebearapps/platform-consumer-sdk/middleware\|platform-sdk.*middleware" $SOURCE_FILES 2>/dev/null | wc -l)
               if [ "$SDK_MW" -gt 0 ]; then
                 add_result "CB middleware" "PASS" "Using SDK middleware directly ($SDK_MW file(s))"
               else
