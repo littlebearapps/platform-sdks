@@ -7,6 +7,22 @@
 
 import type { Tier } from './prompts.js';
 
+/** Single source of truth for the SDK version. */
+export const SDK_VERSION = '1.1.0';
+
+/** Tier ordering for upgrade validation. */
+const TIER_ORDER: Record<Tier, number> = { minimal: 0, standard: 1, full: 2 };
+
+/** Returns true if `to` is the same or higher tier than `from`. */
+export function isTierUpgradeOrSame(from: Tier, to: Tier): boolean {
+  return TIER_ORDER[to] >= TIER_ORDER[from];
+}
+
+/** Check if a template file is a numbered migration (not seed.sql). */
+export function isMigrationFile(file: TemplateFile): boolean {
+  return /migrations\/\d{3}_[^/]+\.sql$/.test(file.dest);
+}
+
 export interface TemplateFile {
   /** Path relative to the templates/ directory */
   src: string;

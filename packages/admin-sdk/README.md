@@ -99,17 +99,42 @@ npx wrangler deploy -c wrangler.my-platform-usage.jsonc
 
 ## Updating Your Platform
 
-The Admin SDK is a **scaffolder, not a framework** — it generates files once and you own them afterward. There is no built-in upgrade command.
+Starting with v1.1.0, the Admin SDK writes a `.platform-scaffold.json` manifest that tracks what was generated. This enables safe, incremental upgrades.
 
-To see what changed between versions:
+### Upgrade an existing project
 
 ```bash
-npx @littlebearapps/platform-admin-sdk temp-diff --tier full --skip-prompts
-diff -r my-platform/ temp-diff/
-rm -rf temp-diff/
+cd my-platform
+npx @littlebearapps/platform-admin-sdk upgrade
 ```
 
-Then cherry-pick new migrations, workers, or config changes into your project. New D1 migrations are safe to apply — all `INSERT` statements use `ON CONFLICT DO NOTHING`.
+The upgrade command:
+- **Creates** new files added in the SDK update
+- **Updates** files you haven't modified (compares content hashes)
+- **Skips** files you've customised (with a warning)
+- **Renumbers** new migrations to avoid conflicts with your own
+
+Preview changes without writing:
+
+```bash
+npx @littlebearapps/platform-admin-sdk upgrade --dry-run
+```
+
+Upgrade to a higher tier:
+
+```bash
+npx @littlebearapps/platform-admin-sdk upgrade --tier standard
+```
+
+### Adopt a pre-v1.1.0 project
+
+Projects scaffolded before v1.1.0 don't have a manifest. Run `adopt` first:
+
+```bash
+npx @littlebearapps/platform-admin-sdk adopt . --tier minimal --project-name my-platform --skip-prompts
+```
+
+This hashes your existing files as a baseline and writes `.platform-scaffold.json`. You can then run `upgrade` normally.
 
 ## Data Safety
 

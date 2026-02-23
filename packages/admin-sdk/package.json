@@ -1,6 +1,6 @@
 {
   "name": "@littlebearapps/platform-admin-sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Platform Admin SDK — scaffold backend infrastructure with workers, circuit breakers, and cost protection for Cloudflare",
   "type": "module",
   "bin": {

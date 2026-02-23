@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.1.0] - 2026-02-23
+
+### Added
+- **`upgrade` command**: Incremental upgrades with content-hash comparison — creates new files, updates unmodified files, skips user-modified files
+- **`adopt` command**: Retroactively add upgrade support to pre-v1.1.0 projects
+- **Scaffold manifest** (`.platform-scaffold.json`): Tracks SDK version, tier, context, file hashes, and migration numbers
+- **Migration renumbering**: New SDK migrations auto-renumber after user-created migrations to avoid conflicts
+- **Tier upgrades**: `upgrade --tier standard` adds standard-tier files to a minimal project
+- **Dry-run mode**: `upgrade --dry-run` previews changes without writing
+- `src/manifest.ts` — Manifest read/write/build with SHA-256 content hashing
+- `src/migrations.ts` — Migration numbering utilities (findHighest, renumber, plan)
+- `src/upgrade.ts` — Upgrade orchestrator with three-way file comparison
+- `src/adopt.ts` — Baseline manifest generator for existing projects
+- 38 new tests (59 total): manifest (7), migrations (16), upgrade (9), adopt (6)
+
+### Changed
+- CLI restructured to Commander subcommands (`scaffold`, `upgrade`, `adopt`)
+- Backward compatible: bare `platform-admin-sdk my-project` still scaffolds
+- `scaffold` now writes `.platform-scaffold.json` alongside generated files
+- SDK_VERSION constant is single source of truth (in `templates.ts`)
+- Scaffold detects existing manifests and suggests `upgrade` instead of failing
+
 ## [1.0.0] - 2026-02-23
 
 ### Changed

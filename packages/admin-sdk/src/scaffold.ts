@@ -8,7 +8,9 @@ import { fileURLToPath } from 'node:url';
 import Handlebars from 'handlebars';
 import pc from 'picocolors';
 import type { ScaffoldOptions } from './prompts.js';
-import { getFilesForTier } from './templates.js';
+import { getFilesForTier, SDK_VERSION } from './templates.js';
+import { hashContent, buildManifest, writeManifest, MANIFEST_FILENAME } from './manifest.js';
+import { findHighestMigration } from './migrations.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,6 +34,12 @@ function renderString(template: string, context: Record<string, string>): string
 
 export async function scaffold(options: ScaffoldOptions, outputDir: string): Promise<void> {
   if (existsSync(outputDir)) {
+    if (existsSync(join(outputDir, MANIFEST_FILENAME))) {
+      throw new Error(
+        `${outputDir} is an existing scaffold. Use:\n` +
+        `  platform-admin-sdk upgrade ${outputDir}`,
+      );
+    }
     throw new Error(`Directory already exists: ${outputDir}`);
   }
 
@@ -45,10 +53,12 @@ export async function scaffold(options: ScaffoldOptions, outputDir: string): Pro
     tier: options.tier,
     gatusUrl: options.gatusUrl,
     defaultAssignee: options.defaultAssignee,
-    sdkVersion: '0.2.0',
+    sdkVersion: SDK_VERSION,
   };
 
   mkdirSync(outputDir, { recursive: true });
+
+  const fileHashes: Record<string, string> = {};
 
   for (const file of files) {
     const srcPath = join(templatesDir, file.src);
@@ -63,16 +73,39 @@ export async function scaffold(options: ScaffoldOptions, outputDir: string): Pro
     }
 
     const raw = readFileSync(srcPath, 'utf-8');
+    let content: string;
 
     if (file.template) {
       const compiled = Handlebars.compile(raw, { noEscape: true });
-      const rendered = compiled(context);
-      writeFileSync(destPath, rendered);
+      content = compiled(context);
     } else {
-      writeFileSync(destPath, raw);
+      content = raw;
     }
 
+    writeFileSync(destPath, content);
+
     const relDest = destPath.replace(outputDir + '/', '');
+    fileHashes[relDest] = hashContent(content);
     console.log(`  ${pc.green('create')} ${relDest}`);
   }
+
+  // Write manifest for future upgrades
+  const migrationsDir = join(outputDir, 'storage/d1/migrations');
+  const highestMigration = findHighestMigration(migrationsDir);
+
+  const manifest = buildManifest(
+    SDK_VERSION,
+    options.tier,
+    {
+      projectName: options.projectName,
+      projectSlug: options.projectSlug,
+      githubOrg: options.githubOrg,
+      gatusUrl: options.gatusUrl,
+      defaultAssignee: options.defaultAssignee,
+    },
+    fileHashes,
+    highestMigration,
+  );
+  writeManifest(outputDir, manifest);
+  console.log(`  ${pc.green('create')} ${MANIFEST_FILENAME}`);
 }
