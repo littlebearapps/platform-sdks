@@ -314,6 +314,60 @@ describe('Durable Objects Proxy', () => {
 
     expect(metrics.doRequests).toBe(3);
   });
+
+  it('idFromName preserves this binding through proxy', () => {
+    // Simulate native Cloudflare methods that require correct `this` context
+    const realNamespace = {
+      idFromName: function(this: unknown, name: string) {
+        if (this !== realNamespace) throw new TypeError('Illegal invocation');
+        return { toString: () => `id:${name}` };
+      },
+      idFromString: function(this: unknown, id: string) {
+        if (this !== realNamespace) throw new TypeError('Illegal invocation');
+        return { toString: () => id };
+      },
+      newUniqueId: function(this: unknown) {
+        if (this !== realNamespace) throw new TypeError('Illegal invocation');
+        return { toString: () => 'unique' };
+      },
+      get: vi.fn().mockReturnValue({
+        id: { toString: () => 'test-id' },
+        fetch: vi.fn().mockResolvedValue(new Response('OK')),
+      }),
+    } as unknown as DurableObjectNamespace;
+
+    const metrics = createMetricsAccumulator();
+    const proxied = createDOProxy(realNamespace, metrics);
+
+    // These would throw "Illegal invocation" without .bind(target)
+    expect(() => proxied.idFromName('test')).not.toThrow();
+    expect(() => proxied.idFromString('abc')).not.toThrow();
+    expect(() => proxied.newUniqueId()).not.toThrow();
+  });
+
+  it('stub methods preserve this binding through proxy', async () => {
+    const realStub = {
+      id: { toString: () => 'test-id' },
+      fetch: function(this: unknown, ...args: unknown[]) {
+        if (this !== realStub) throw new TypeError('Illegal invocation');
+        return Promise.resolve(new Response('OK'));
+      },
+    };
+
+    const ns = {
+      idFromName: vi.fn().mockReturnValue({ toString: () => 'id' }),
+      idFromString: vi.fn(),
+      newUniqueId: vi.fn(),
+      get: vi.fn().mockReturnValue(realStub),
+    } as unknown as DurableObjectNamespace;
+
+    const metrics = createMetricsAccumulator();
+    const proxied = createDOProxy(ns, metrics);
+
+    const stub = proxied.get(proxied.idFromName('test'));
+    // fetch is specially handled in createDOStubProxy — verify it still works
+    await expect(stub.fetch('https://do/test')).resolves.toBeDefined();
+  });
 });
 
 // =============================================================================

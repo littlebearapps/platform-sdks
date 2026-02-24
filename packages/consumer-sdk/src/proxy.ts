@@ -590,8 +590,12 @@ function createDOStubProxy(
         };
       }
 
-      // Pass through: id, name
-      return Reflect.get(target, prop);
+      // Pass through: id, name — bind to preserve `this` context
+      const value = Reflect.get(target, prop);
+      if (typeof value === 'function') {
+        return value.bind(target);
+      }
+      return value;
     },
   });
 }
@@ -614,8 +618,13 @@ export function createDOProxy(
         };
       }
 
-      // Pass through ID methods
-      return Reflect.get(target, prop);
+      // Pass through ID methods — bind to preserve `this` context for
+      // native Cloudflare methods (idFromName, idFromString, newUniqueId)
+      const value = Reflect.get(target, prop);
+      if (typeof value === 'function') {
+        return value.bind(target);
+      }
+      return value;
     },
   });
 }
