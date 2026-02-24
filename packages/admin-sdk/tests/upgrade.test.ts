@@ -281,6 +281,29 @@ describe('adopt', () => {
     expect(manifest.sdkVersion).toBe('1.0.0');
   });
 
+  it('adopt sets highestScaffoldMigration from SDK templates, not disk', async () => {
+    await scaffold(BASE_OPTIONS, projectDir);
+    rmSync(join(projectDir, MANIFEST_FILENAME));
+
+    // Add user migrations beyond the SDK's range
+    const migrationsDir = join(projectDir, 'storage/d1/migrations');
+    writeFileSync(join(migrationsDir, '010_user_custom.sql'), 'CREATE TABLE custom;');
+    writeFileSync(join(migrationsDir, '011_user_another.sql'), 'CREATE TABLE another;');
+
+    adopt(projectDir, {
+      projectName: 'test-project',
+      projectSlug: 'test-project',
+      githubOrg: '',
+      tier: 'minimal',
+      gatusUrl: '',
+      defaultAssignee: '',
+    });
+
+    const manifest = readManifest(projectDir)!;
+    // Should be 4 (highest SDK migration for minimal tier), NOT 11 (highest on disk)
+    expect(manifest.highestScaffoldMigration).toBe(4);
+  });
+
   it('adopt then upgrade works end-to-end', async () => {
     // Scaffold minimal, remove manifest, adopt, then upgrade to standard
     await scaffold(BASE_OPTIONS, projectDir);

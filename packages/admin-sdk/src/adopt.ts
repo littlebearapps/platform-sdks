@@ -9,9 +9,9 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import pc from 'picocolors';
 import type { Tier } from './prompts.js';
-import { getFilesForTier, SDK_VERSION } from './templates.js';
+import { getFilesForTier, SDK_VERSION, isMigrationFile } from './templates.js';
 import { hashContent, writeManifest, buildManifest, readManifest, MANIFEST_FILENAME } from './manifest.js';
-import { findHighestMigration } from './migrations.js';
+import { getMigrationNumber } from './migrations.js';
 
 export interface AdoptOptions {
   projectName: string;
@@ -62,8 +62,15 @@ export function adopt(projectDir: string, options: AdoptOptions): void {
     }
   }
 
-  const migrationsDir = join(projectDir, 'storage/d1/migrations');
-  const highestMigration = findHighestMigration(migrationsDir);
+  // highestScaffoldMigration is the highest migration the SDK owns for this tier,
+  // NOT the highest migration on disk (which includes user-created migrations)
+  let highestScaffoldMigration = 0;
+  for (const file of files.filter(isMigrationFile)) {
+    const num = getMigrationNumber(file.dest);
+    if (num !== null && num > highestScaffoldMigration) {
+      highestScaffoldMigration = num;
+    }
+  }
 
   const sdkVersion = options.fromVersion ?? SDK_VERSION;
 
@@ -78,13 +85,13 @@ export function adopt(projectDir: string, options: AdoptOptions): void {
       defaultAssignee: options.defaultAssignee,
     },
     fileHashes,
-    highestMigration,
+    highestScaffoldMigration,
   );
 
   writeManifest(projectDir, manifest);
 
   console.log(`  ${pc.green('create')} ${MANIFEST_FILENAME}`);
   console.log(`  ${pc.dim(`Matched ${matched} of ${files.length} expected files.`)}`);
-  console.log(`  ${pc.dim(`Highest migration: ${highestMigration || 'none'}`)}`);
+  console.log(`  ${pc.dim(`SDK migrations: up to ${highestScaffoldMigration || 'none'}`)}`);
   console.log(`  ${pc.dim(`Tier: ${options.tier}, SDK: ${sdkVersion}`)}`);
 }
