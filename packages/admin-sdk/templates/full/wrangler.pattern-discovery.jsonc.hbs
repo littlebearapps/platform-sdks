@@ -27,6 +27,11 @@
 
   "ai": { "binding": "AI" },
 
+  // Dashboard notifications for new patterns and review-ready items
+  "services": [
+    { "binding": "NOTIFICATIONS_API", "service": "{{projectSlug}}-notifications" }
+  ],
+
   "vars": {
     "GATUS_HEARTBEAT_URL": "{{gatusUrl}}"
   }

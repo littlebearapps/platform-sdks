@@ -6,6 +6,7 @@ import { scaffold } from '../src/scaffold.js';
 import { upgrade } from '../src/upgrade.js';
 import { adopt } from '../src/adopt.js';
 import { readManifest, hashContent, MANIFEST_FILENAME } from '../src/manifest.js';
+import { SDK_VERSION } from '../src/templates.js';
 import type { ScaffoldOptions } from '../src/prompts.js';
 
 const BASE_OPTIONS: ScaffoldOptions = {
@@ -60,7 +61,7 @@ describe('upgrade', () => {
     // Files whose content hasn't changed won't appear in updated
     // but the manifest should be rewritten with new version
     const newManifest = readManifest(projectDir)!;
-    expect(newManifest.sdkVersion).toBe('1.1.0');
+    expect(newManifest.sdkVersion).toBe(SDK_VERSION);
   });
 
   it('skips user-modified files', async () => {
@@ -327,6 +328,6 @@ describe('adopt', () => {
 
     const manifest = readManifest(projectDir)!;
     expect(manifest.tier).toBe('standard');
-    expect(manifest.sdkVersion).toBe('1.1.0');
+    expect(manifest.sdkVersion).toBe(SDK_VERSION);
   });
 });

@@ -22,13 +22,28 @@
     {
       "binding": "PLATFORM_ALERTS",
       "id": "YOUR_KV_ALERTS_NAMESPACE_ID"
+    },
+    {
+      "binding": "SERVICE_REGISTRY",
+      "id": "YOUR_SERVICE_REGISTRY_KV_ID"
     }
+  ],
+
+  "queues": {
+    "producers": [
+      { "binding": "PLATFORM_TELEMETRY", "queue": "{{projectSlug}}-telemetry" }
+    ]
+  },
+
+  "services": [
+    { "binding": "NOTIFICATIONS_API", "service": "{{projectSlug}}-notifications" }
   ],
 
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "YOUR_CLOUDFLARE_ACCOUNT_ID"
   }
 
-  // Secrets needed:
+  // Secrets needed (set via wrangler secret put):
   //   SLACK_WEBHOOK_URL
+  //   GITHUB_TOKEN
 }

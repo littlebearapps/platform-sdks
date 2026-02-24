@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1] - 2026-02-24
+
+### Fixed
+- **CRITICAL**: `wrangler.alert-router.jsonc.hbs` missing `SERVICE_REGISTRY` KV, `PLATFORM_TELEMETRY` queue, `NOTIFICATIONS_API` service binding, and `GITHUB_TOKEN` secret — would cause runtime errors
+- `wrangler.pattern-discovery.jsonc.hbs` missing `NOTIFICATIONS_API` service binding — dashboard notifications silently failed
+- `wrangler.error-collector.jsonc.hbs` Gatus var names mismatched Env interface (`GATUS_HEARTBEAT_URL` vs `GATUS_HEARTBEAT_URL_15M` / `GATUS_HEARTBEAT_URL_DIGEST`)
+- Added `GATUS_TOKEN` secret comment to error-collector wrangler template
+- Added commented `NOTIFICATIONS_API` service binding hints to error-collector and sentinel wrangler templates (for full-tier users)
+
 ## [1.1.0] - 2026-02-23
 
 ### Added

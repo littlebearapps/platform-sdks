@@ -8,7 +8,7 @@
 import type { Tier } from './prompts.js';
 
 /** Single source of truth for the SDK version. */
-export const SDK_VERSION = '1.1.0';
+export const SDK_VERSION = '1.1.1';
 
 /** Tier ordering for upgrade validation. */
 const TIER_ORDER: Record<Tier, number> = { minimal: 0, standard: 1, full: 2 };

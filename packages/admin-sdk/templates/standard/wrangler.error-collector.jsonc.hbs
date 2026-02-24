@@ -34,11 +34,18 @@
   "vars": {
     "GITHUB_ORG": "{{githubOrg}}",
     "DEFAULT_ASSIGNEE": "{{defaultAssignee}}",
-    "GATUS_HEARTBEAT_URL": "{{gatusUrl}}"
+    "GATUS_HEARTBEAT_URL_15M": "{{gatusUrl}}",
+    "GATUS_HEARTBEAT_URL_DIGEST": "{{gatusUrl}}"
   }
+
+  // Uncomment when you add notifications (full tier):
+  // "services": [
+  //   { "binding": "NOTIFICATIONS_API", "service": "{{projectSlug}}-notifications" }
+  // ]
 
   // Secrets needed (set via wrangler secret put):
   //   GITHUB_APP_ID
   //   GITHUB_APP_PRIVATE_KEY
   //   GITHUB_APP_INSTALLATION_ID
+  //   GATUS_TOKEN (optional: bearer token for Gatus external endpoints)
 }
