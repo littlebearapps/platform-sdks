@@ -81,25 +81,84 @@ my-platform/
 
 ## Post-Scaffold Steps
 
+### 1. Install dependencies
+
 ```bash
 cd my-platform
 npm install
+```
 
-# Create Cloudflare resources
+### 2. Create Cloudflare resources
+
+**All tiers:**
+
+```bash
 npx wrangler d1 create my-platform-metrics
 npx wrangler kv namespace create PLATFORM_CACHE
 npx wrangler queues create my-platform-telemetry
 npx wrangler queues create my-platform-telemetry-dlq
+```
 
-# Update resource IDs in wrangler.*.jsonc, then:
+**Standard tier** — also create:
+
+```bash
+npx wrangler kv namespace create PLATFORM_ALERTS
+```
+
+**Full tier** — also create:
+
+```bash
+npx wrangler kv namespace create SERVICE_REGISTRY
+```
+
+Update the resource IDs in each `wrangler.*.jsonc` file.
+
+### 3. Configure secrets
+
+```bash
+# Standard tier — error-collector (GitHub App for auto-issue creation)
+npx wrangler secret put GITHUB_APP_ID -c wrangler.my-platform-error-collector.jsonc
+npx wrangler secret put GITHUB_APP_PRIVATE_KEY -c wrangler.my-platform-error-collector.jsonc
+npx wrangler secret put GITHUB_APP_INSTALLATION_ID -c wrangler.my-platform-error-collector.jsonc
+
+# Standard tier — sentinel (Cloudflare API for cost monitoring)
+npx wrangler secret put CLOUDFLARE_API_TOKEN -c wrangler.my-platform-sentinel.jsonc
+
+# Optional — Slack alerts (any worker with SLACK_WEBHOOK_URL)
+npx wrangler secret put SLACK_WEBHOOK_URL -c wrangler.my-platform-sentinel.jsonc
+
+# Full tier — alert-router (GitHub token for issue creation)
+npx wrangler secret put GITHUB_TOKEN -c wrangler.my-platform-alert-router.jsonc
+npx wrangler secret put SLACK_WEBHOOK_URL -c wrangler.my-platform-alert-router.jsonc
+```
+
+### 4. Apply migrations and deploy
+
+```bash
+# Sync config to D1/KV
 npm run sync:config
+
+# Apply D1 migrations
 npx wrangler d1 migrations apply my-platform-metrics --remote
+
+# Deploy workers (order matters — deploy usage first, then tail consumers)
 npx wrangler deploy -c wrangler.my-platform-usage.jsonc
+
+# Standard tier
+npx wrangler deploy -c wrangler.my-platform-error-collector.jsonc
+npx wrangler deploy -c wrangler.my-platform-sentinel.jsonc
+
+# Full tier
+npx wrangler deploy -c wrangler.my-platform-notifications.jsonc
+npx wrangler deploy -c wrangler.my-platform-search.jsonc
+npx wrangler deploy -c wrangler.my-platform-settings.jsonc
+npx wrangler deploy -c wrangler.my-platform-pattern-discovery.jsonc
+npx wrangler deploy -c wrangler.my-platform-alert-router.jsonc
 ```
 
 ## Updating Your Platform
 
-Starting with v1.1.0, the Admin SDK writes a `.platform-scaffold.json` manifest that tracks what was generated. This enables safe, incremental upgrades.
+Starting with v1.1.0, the Admin SDK writes a `.platform-scaffold.json` manifest that tracks what was generated. This enables safe, incremental upgrades. **Commit this file to git** — it's how the upgrade command knows what to update.
 
 ### Upgrade an existing project
 
