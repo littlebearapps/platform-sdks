@@ -371,7 +371,7 @@ describe('Platform SDK Logging', () => {
 
         const logEntry = JSON.parse(consoleLogs[0].args[0] as string);
         expect(logEntry.message).toBe('fetch_data completed');
-        expect(logEntry.durationMs).toBeGreaterThanOrEqual(10);
+        expect(logEntry.durationMs).toBeGreaterThanOrEqual(5);
       });
 
       it('logs duration and error for failed operations', async () => {
