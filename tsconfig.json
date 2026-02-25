@@ -1,7 +1,7 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/sdk" },
-    { "path": "packages/create-platform" }
+    { "path": "packages/consumer-sdk" },
+    { "path": "packages/admin-sdk" }
   ]
 }

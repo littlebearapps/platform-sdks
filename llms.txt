@@ -1,0 +1,127 @@
+# Platform SDKs
+
+> Automatic cost protection, circuit breaking, and telemetry for Cloudflare Workers.
+> Monorepo: github.com/littlebearapps/platform-sdks
+
+## Packages
+
+- @littlebearapps/platform-consumer-sdk — Runtime library, install in each Worker
+- @littlebearapps/platform-admin-sdk — CLI scaffolder, generates backend infrastructure once
+
+## Consumer SDK — Core Pattern
+
+```typescript
+import { withFeatureBudget, completeTracking, CircuitBreakerError } from '@littlebearapps/platform-consumer-sdk';
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const tracked = withFeatureBudget(env, 'myapp:api:main', { ctx });
+    try {
+      const result = await tracked.DB.prepare('SELECT * FROM users LIMIT 100').all();
+      return Response.json(result);
+    } catch (e) {
+      if (e instanceof CircuitBreakerError) {
+        return new Response('Feature disabled', { status: 503 });
+      }
+      throw e;
+    } finally {
+      ctx.waitUntil(completeTracking(tracked));
+    }
+  }
+};
+```
+
+## Feature ID Format
+
+`project:category:feature` — three colon-separated kebab-case parts.
+Examples: `scout:ocr:process`, `brand-copilot:scanner:github`, `myapp:api:main`, `myapp:cron:daily-sync`
+
+## Required Wrangler Bindings
+
+```jsonc
+{
+  "kv_namespaces": [{ "binding": "PLATFORM_CACHE", "id": "YOUR_KV_ID" }],
+  "queues": { "producers": [{ "binding": "TELEMETRY_QUEUE", "queue": "your-telemetry-queue" }] }
+}
+```
+
+tsconfig requirement: `"moduleResolution": "bundler"` — SDK ships raw .ts source.
+
+## What Gets Tracked Automatically
+
+D1 (reads, writes, rows read/written), KV (reads, writes, deletes, lists), R2 (Class A/B ops), Workers AI (requests, model breakdown), Vectorize (queries, inserts), Queue (messages), Durable Objects (requests, latency percentiles), Workflows (invocations).
+
+## Circuit Breaker Hierarchy
+
+Global kill switch (GLOBAL_STOP_ALL) > Project level (PROJECT:{SLUG}:STATUS — active/warning/paused) > Feature level (CONFIG:FEATURE:{id}:STATUS — GO/STOP)
+
+## Handler Wrappers
+
+- `withFeatureBudget(env, featureId, { ctx })` — fetch handlers
+- `withCronBudget(env, featureId, { ctx, cronExpression })` — scheduled handlers
+- `withQueueBudget(env, featureId, { message, queueName })` — queue handlers
+- `completeTracking(trackedEnv)` — flush metrics (call in finally block)
+
+## Sub-path Exports
+
+- `/middleware` — Project-level circuit breaker (Hono-compatible): `createCircuitBreakerMiddleware(key, opts)`
+- `/patterns` — 125 static transient error patterns (zero I/O): `classifyErrorAsTransient(message)`
+- `/dynamic-patterns` — AI-discovered patterns from KV: `loadDynamicPatterns(kv)`
+- `/heartbeat` — Gatus heartbeat ping: `pingHeartbeat(url, token)`
+- `/retry` — Exponential backoff: `withExponentialBackoff(fn, attempts)`
+- `/costs` — Cloudflare pricing tiers and cost calculation: `calculateHourlyCosts(metrics)`
+
+## Key Exports (Main)
+
+Core: `withFeatureBudget`, `completeTracking`, `CircuitBreakerError`, `health`
+Logging: `createLogger`, `createLoggerFromRequest`, `getCorrelationId`, `setCorrelationId`
+Errors: `categoriseError`, `reportError`, `withErrorTracking`, `trackError`
+Tracing: `createTraceContext`, `extractTraceContext`, `propagateTraceContext`, `createTracedFetch`, `startSpan`, `endSpan`
+Timeout: `withTimeout`, `withTrackedTimeout`, `withRequestTimeout`, `TimeoutError`, `DEFAULT_TIMEOUTS`
+Service: `createServiceClient`, `wrapServiceBinding`, `extractCorrelationChain`
+AI: `createAIGatewayFetch`, `parseAIGatewayUrl`, `reportAIGatewayUsage`
+DO: `withHeartbeat` (Durable Object mixin with alarm-based heartbeats)
+Constants: `KV_KEYS`, `CIRCUIT_STATUS`, `METRIC_FIELDS`, `BINDING_NAMES`
+
+## Admin SDK — Commands
+
+```bash
+npx @littlebearapps/platform-admin-sdk my-project                    # scaffold (interactive)
+npx @littlebearapps/platform-admin-sdk my-project --tier full --skip-prompts  # scaffold (CI)
+npx @littlebearapps/platform-admin-sdk upgrade                       # upgrade existing
+npx @littlebearapps/platform-admin-sdk upgrade --dry-run             # preview changes
+npx @littlebearapps/platform-admin-sdk adopt . --tier minimal        # adopt pre-v1.1.0 project
+```
+
+## Tiers
+
+- Minimal (1 worker): platform-usage — budget enforcement, circuit breakers, telemetry queue consumer
+- Standard (3 workers): + error-collector (tail worker, auto GitHub issues), platform-sentinel (gap detection, cost monitoring)
+- Full (8 workers): + pattern-discovery (AI error classification), alert-router, notifications, search, settings
+
+## CI Integration (Reusable Workflow)
+
+```yaml
+jobs:
+  sdk-check:
+    uses: littlebearapps/platform-sdks/.github/workflows/consumer-check.yml@main
+    with:
+      project-name: my-project
+      strict-mode: true
+```
+
+Checks: SDK install, wrangler config bindings, budget wrapper usage, feature ID format, cost safety (loop inserts, ON CONFLICT, LIMIT, SQL injection), middleware migration.
+
+## Common Errors
+
+- `CircuitBreakerError` — Budget exhausted or kill switch active. Return 503.
+- Telemetry silently dropped — Missing `TELEMETRY_QUEUE` binding in wrangler config.
+- `Illegal invocation` on service bindings — Upgrade to v1.0.0+ (fixed Fetcher proxy wrapping).
+- `completeTracking` has no effect — Must be called on the tracked env (returned by `withFeatureBudget`), not the original `env`.
+
+## Links
+
+- npm (consumer): https://www.npmjs.com/package/@littlebearapps/platform-consumer-sdk
+- npm (admin): https://www.npmjs.com/package/@littlebearapps/platform-admin-sdk
+- Docs: https://docs.littlebearapps.com/platform-guides/sdk-integration-checklist/
+- Claude Code Plugin: https://github.com/littlebearapps/platform-sdk-plugin
