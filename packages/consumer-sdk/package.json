@@ -1,6 +1,6 @@
 {
   "name": "@littlebearapps/platform-consumer-sdk",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Platform Consumer SDK — automatic metric collection, circuit breaking, and cost protection for Cloudflare Workers",
   "type": "module",
   "main": "./src/index.ts",
