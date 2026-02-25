@@ -20,6 +20,50 @@ projects:
           script_name: {{projectSlug}}-usage
           status: active
           schedule: "0 * * * *"
+{{#if isStandard}}
+
+        - id: {{projectSlug}}-error-collector
+          name: "Error Collector"
+          script_name: {{projectSlug}}-error-collector
+          status: active
+          schedule: "*/15 * * * *"
+          metadata:
+            type: tail-worker
+
+        - id: {{projectSlug}}-sentinel
+          name: "Platform Sentinel"
+          script_name: {{projectSlug}}-sentinel
+          status: active
+          schedule: "*/15 * * * *"
+{{/if}}
+{{#if isFull}}
+
+        - id: {{projectSlug}}-pattern-discovery
+          name: "Pattern Discovery"
+          script_name: {{projectSlug}}-pattern-discovery
+          status: active
+          schedule: "0 2 * * *"
+
+        - id: {{projectSlug}}-alert-router
+          name: "Alert Router"
+          script_name: {{projectSlug}}-alert-router
+          status: active
+
+        - id: {{projectSlug}}-notifications
+          name: "Notifications"
+          script_name: {{projectSlug}}-notifications
+          status: active
+
+        - id: {{projectSlug}}-search
+          name: "Search"
+          script_name: {{projectSlug}}-search
+          status: active
+
+        - id: {{projectSlug}}-settings
+          name: "Settings"
+          script_name: {{projectSlug}}-settings
+          status: active
+{{/if}}
       storage:
         d1:
           - database_name: {{projectSlug}}-metrics
@@ -43,3 +87,58 @@ projects:
           feature_id: "{{projectSlug}}:queue:telemetry"
           circuit_breaker: true
           cost_tier: low
+{{#if isStandard}}
+      error-collection:
+        tail-processing:
+          display_name: "Error Tail Processing"
+          feature_id: "{{projectSlug}}:error-collection:tail"
+          circuit_breaker: true
+          cost_tier: medium
+        daily-digest:
+          display_name: "Error Daily Digest"
+          feature_id: "{{projectSlug}}:error-collection:digest"
+          circuit_breaker: true
+          cost_tier: low
+        gap-alerts:
+          display_name: "Gap Alert Processing"
+          feature_id: "{{projectSlug}}:error-collection:gap-alerts"
+          circuit_breaker: false
+          cost_tier: low
+      monitor:
+        sentinel:
+          display_name: "Platform Sentinel"
+          feature_id: "{{projectSlug}}:monitor:sentinel"
+          circuit_breaker: true
+          cost_tier: low
+{{/if}}
+{{#if isFull}}
+      pattern-discovery:
+        ai-discovery:
+          display_name: "AI Pattern Discovery"
+          feature_id: "{{projectSlug}}:pattern-discovery:ai"
+          circuit_breaker: true
+          cost_tier: high
+        shadow-evaluation:
+          display_name: "Shadow Evaluation"
+          feature_id: "{{projectSlug}}:pattern-discovery:shadow"
+          circuit_breaker: true
+          cost_tier: medium
+      notifications:
+        api:
+          display_name: "Notifications API"
+          feature_id: "{{projectSlug}}:notifications:api"
+          circuit_breaker: true
+          cost_tier: low
+      search:
+        api:
+          display_name: "Search API"
+          feature_id: "{{projectSlug}}:search:api"
+          circuit_breaker: true
+          cost_tier: low
+      settings:
+        api:
+          display_name: "Settings API"
+          feature_id: "{{projectSlug}}:settings:api"
+          circuit_breaker: true
+          cost_tier: low
+{{/if}}

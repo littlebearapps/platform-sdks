@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0] - 2026-02-25
+
+### Fixed
+- **services.yaml template**: Only registered `usage` worker — missing all standard/full tier workers (error-collector, sentinel, pattern-discovery, alert-router, notifications, search, settings). New projects had incomplete service registries, breaking budget enforcement and topology discovery.
+- **wrangler.usage.jsonc.hbs**: Comment incorrectly said "standard tier" when referring to `NOTIFICATIONS_API` (which is full tier)
+- **wrangler.sentinel.jsonc.hbs**: Commented `"services"` block would create duplicate JSON key — changed to instruction to merge into existing array
+
+### Added
+- **Tier-conditional service registry**: `services.yaml` template now registers workers and features appropriate to the selected tier (minimal/standard/full)
+- `isStandard` and `isFull` Handlebars context flags for tier-conditional template sections
+- Feature definitions for error-collection (tail-processing, daily-digest, gap-alerts), monitoring (sentinel), pattern-discovery (ai-discovery, shadow-evaluation), notifications, search, and settings
+
 ## [1.1.1] - 2026-02-24
 
 ### Fixed

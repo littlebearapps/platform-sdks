@@ -54,6 +54,9 @@ export async function scaffold(options: ScaffoldOptions, outputDir: string): Pro
     gatusUrl: options.gatusUrl,
     defaultAssignee: options.defaultAssignee,
     sdkVersion: SDK_VERSION,
+    // Computed flags for Handlebars conditionals in templates
+    isStandard: (options.tier === 'standard' || options.tier === 'full') ? 'true' : '',
+    isFull: options.tier === 'full' ? 'true' : '',
   };
 
   mkdirSync(outputDir, { recursive: true });
